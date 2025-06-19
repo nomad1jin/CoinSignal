@@ -53,7 +53,6 @@ def get_user_profile():
 ##### 2. 매매 판단 함수 #####
 def evaluate_trades(coin_data, profile):
 
-    # 매수 후보 필터링
     # 트렌드는 반드시 0.3이 기준
     # 부정0 중립1 긍정2
 

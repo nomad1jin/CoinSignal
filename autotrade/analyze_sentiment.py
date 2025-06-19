@@ -51,7 +51,7 @@ def build_coin_data_from_csv(coin_name: str, trend_score: float, holdings: dict)
         tweet_texts = tweet_rows["Tweet"].dropna().tolist()
         all_texts.extend(tweet_texts)
     except Exception as e:
-        print(f"❌ 트윗 파일 로딩 오류: {e}")
+        print(f"트윗 파일 로딩 오류: {e}")
 
     # 레딧 데이터 읽기 + 필터 + 'Content' 컬럼 사용
     try:
@@ -59,7 +59,7 @@ def build_coin_data_from_csv(coin_name: str, trend_score: float, holdings: dict)
         reddit_texts = reddit_rows["Content"].dropna().tolist()
         all_texts.extend(reddit_texts)
     except Exception as e:
-        print(f"❌ 레딧 파일 로딩 오류: {e}")
+        print(f"레딧 파일 로딩 오류: {e}")
 
     # 감정 분석
     emotion_label = analyze_sentiments(all_texts)

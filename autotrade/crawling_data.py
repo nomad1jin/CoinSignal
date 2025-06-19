@@ -119,7 +119,6 @@ def twitter_search(coin):
         driver.quit()
 
 
-
 def fetch_reddit_posts(coin, limit=200, days=30):
     reddit = praw.Reddit(client_id=CLIENT_ID, client_secret=CLIENT_SECRET, user_agent=USER_AGENT)
     cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)

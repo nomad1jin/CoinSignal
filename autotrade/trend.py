@@ -53,6 +53,7 @@ def get_trend_data(keyword, timeframe, max_retries=5):
         attempt += 1
     return 0
 
+
 def analyze_trend(coin):
     """ 코인 검색량을 분석하고 급상승 여부 판별 """
     print("\n\n🔍 트렌드 분석 시작")

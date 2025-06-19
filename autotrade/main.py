@@ -61,14 +61,13 @@ def run_once_trend_and_sentiment():
 
 
 def run_daily_autotrade():
-    print(f"💰 자동매매 시작: {datetime.now()}")
-
     coin_data = run_once_trend_and_sentiment()
 
     if not coin_data:
         print("⚠ 매매할 코인 없음 (감정분석 결과 없음)")
         return
 
+    print(f"💰 자동매매 시작: {datetime.now()}")
     buy_order, sell_order = evaluate_trades(coin_data, profile)
     execute_trades(buy_order, sell_order)
 
