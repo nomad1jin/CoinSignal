@@ -1,0 +1,32 @@
+# __pycache__ 폴더 및 .pyc 파일들
+__pycache__/
+*.py[cod]
+
+# 가상환경 폴더 (예: venv)
+venv/
+.venv/
+
+# Jupyter Notebook 체크포인트
+.ipynb_checkpoints/
+
+# 환경설정 파일
+.env
+*.env
+
+# OS별 임시파일
+.DS_Store
+Thumbs.db
+
+# 로그파일, 결과 데이터
+*.log
+*.csv
+
+# 모델 저장 파일
+*.pt
+*.pth
+*.h5
+
+# 파이썬 관련 숨김 폴더
+.idea/
+.vscode/
+.env
