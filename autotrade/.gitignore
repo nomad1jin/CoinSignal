@@ -25,6 +25,8 @@ Thumbs.db
 *.pt
 *.pth
 *.h5
+*.zip
+*.safetensors
 
 # 파이썬 관련 숨김 폴더
 .idea/
