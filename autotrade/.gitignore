@@ -25,6 +25,7 @@ Thumbs.db
 *.pt
 *.pth
 *.h5
+autotrade.zip
 *.zip
 *.safetensors
 
