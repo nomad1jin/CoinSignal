@@ -19,6 +19,19 @@ logging.basicConfig(
     ]
 )
 
+COIN_TICKER_MAP = {
+    "bitcoin": "BTC",
+    "ethereum": "ETH",
+    "tether": "USDT",
+    "ripple": "XRP",
+    "solana": "SOL",
+    "usd coin": "USDC",
+    "tron": "TRX",
+    "dogecoin": "DOGE",
+    "ada": "ADA",
+    "sui": "SUI"
+}
+
 # 알파: 감정 점수 반영
 # 베타: 상승률 반영 
 # buy_limit_pct: 한 종목당 매수 비중
@@ -31,11 +44,11 @@ logging.basicConfig(
 def get_default_profile(style):
     defaults = {
         "test": {
-            "max_daily_invest": 5000, "loss_cut": -0.002, "take_profit": 0.003,
+            "max_daily_invest": 25000, "loss_cut": -0.002, "take_profit": 0.003,
             "max_coin_count": 5
         },
         "neutral": {
-            "max_daily_invest": 10000, "loss_cut": -0.05, "take_profit": 0.05,
+            "max_daily_invest": 50000, "loss_cut": -0.05, "take_profit": 0.05,
             "max_coin_count": 5
         }
     }
@@ -53,6 +66,9 @@ def get_user_profile():
 ##### 2. 매매 판단 함수 #####
 def evaluate_trades(coin_data, profile):
 
+    print("💰 매수/매도 판단중...")
+
+    # 매수 후보 필터링
     # 트렌드는 반드시 0.3이 기준
     # 부정0 중립1 긍정2
 
@@ -98,16 +114,23 @@ def get_current_holdings():
 
 def execute_trades(buy_order, sell_order):
     holdings = get_current_holdings()
-    log_current_holdings(upbit)
+
+    print(f"💰 자동매매 시작: {datetime.now()}")
 
     # 매수
     for coin, info in buy_order.items():
-        krw_ticker = f"KRW-{coin.upper()}"
-        amount = info["invest_krw"]  
+        ticker = COIN_TICKER_MAP.get(coin.lower())
+        if not ticker:
+            logging.warning(f"[티커 없음] {coin} → 건너뜀")
+            continue
+
+        krw_ticker = f"KRW-{ticker}"
+        amount = info["invest_krw"]
         try:
             logging.info(f"[매수 시도] {coin} → {amount:,} KRW")
             resp = upbit.buy_market_order(krw_ticker, amount)
             logging.info(f"[매수 응답] {resp}")
+            log_current_holdings(upbit)
 
         except Exception as e:
             logging.error(f"[매수 실패] {coin}: {e}")
@@ -116,17 +139,24 @@ def execute_trades(buy_order, sell_order):
     # 매도
     for coin, info in sell_order.items():
         coin_lc = coin.lower()
+        ticker = COIN_TICKER_MAP.get(coin_lc)
+        if not ticker:
+            logging.warning(f"[티커 없음] {coin} → 건너뜀")
+            continue
+
         if coin_lc in holdings:
             try:
                 amt = holdings[coin_lc] * info["sell_pct"] / 100
-                krw_ticker = f"KRW-{coin.upper()}"
+                krw_ticker = f"KRW-{ticker}"
                 logging.info(f"[매도 시도] {coin} → {info['sell_pct']}% ({amt:.6f}개)")
                 resp = upbit.sell_market_order(krw_ticker, amt)
                 logging.info(f"[매도 응답] {resp}")
+                log_current_holdings(upbit)
 
             except Exception as e:
                 logging.error(f"[매도 실패] {coin}: {e}")
             time.sleep(0.3)
+
 
 ##### 손절/익절 감시 #####
 def monitor_positions(style):
