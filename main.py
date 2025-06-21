@@ -23,8 +23,8 @@ logging.basicConfig(
 
 COIN_LISTS = [
     # ['bitcoin', 'ethereum']
-    # ['tether', 'ripple', 'solana']
-    ['USD Coin', 'tron']
+    ['tether', 'ripple', 'solana']
+    # ['USD Coin', 'tron']
     # ['USD Coin', 'tron', 'dogecoin', 'ada', 'sui']
 ]
 
@@ -72,8 +72,8 @@ def run_daily_autotrade():
 
 
 def combined_task():
-    run_daily_autotrade()
-    monitor_positions(profile)
+    run_daily_autotrade()       # 트렌드분석 + 크롤링 + 감정분석 + 자동매수,매도
+    monitor_positions(profile)      # 손절/익절 모니터링 
 
 
 # ✅ 스케줄 등록

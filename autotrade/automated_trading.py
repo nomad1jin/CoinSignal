@@ -44,7 +44,7 @@ COIN_TICKER_MAP = {
 def get_default_profile(style):
     defaults = {
         "test": {
-            "max_daily_invest": 25000, "loss_cut": -0.002, "take_profit": 0.003,
+            "max_daily_invest": 25000, "loss_cut": -0.01, "take_profit": 0.01,
             "max_coin_count": 5
         },
         "neutral": {
@@ -81,13 +81,13 @@ def evaluate_trades(coin_data, profile):
         holding = v["holding"]
 
         #매수 조건
-        if trend > 0.2 and emotion == 2:
+        if trend > 0.3 and emotion == 2:
             buy_order[coin] = {"invest_krw": profile["max_daily_invest"] / profile["max_coin_count"]}
 
         #중립은 관망
 
         #매도 조건
-        elif trend > 0.2 and emotion == 0 and holding:
+        elif trend > 0.3 and emotion == 0 and holding:
             sell_order[coin] = {"sell_pct": 100.0}  #전량 매도
 
     return buy_order, sell_order
@@ -117,6 +117,9 @@ def execute_trades(buy_order, sell_order):
 
     print(f"💰 자동매매 시작: {datetime.now()}")
 
+    min_order_krw = 5000
+    fee_rate = 0.0005 
+    
     # 매수
     for coin, info in buy_order.items():
         ticker = COIN_TICKER_MAP.get(coin.lower())
@@ -126,6 +129,11 @@ def execute_trades(buy_order, sell_order):
 
         krw_ticker = f"KRW-{ticker}"
         amount = info["invest_krw"]
+        required_total = min_order_krw / (1 - fee_rate) #최소 주문 금액
+        if amount < required_total:
+            logging.warning(f"[매수 생략] {coin} 투자금({amount:.1f}원)이 최소 주문금액+수수료({required_total:.1f}원) 미만")
+            continue
+        
         try:
             logging.info(f"[매수 시도] {coin} → {amount:,} KRW")
             resp = upbit.buy_market_order(krw_ticker, amount)
@@ -161,25 +169,49 @@ def execute_trades(buy_order, sell_order):
 ##### 손절/익절 감시 #####
 def monitor_positions(style):
     print("📉 손절/익절 감시 중...")
-
     balances = upbit.get_balances()
     log_current_holdings(upbit)
-
 
     for b in balances:
         if b['currency'] == 'KRW' or float(b['balance']) == 0:
             continue
+
         ticker = f"KRW-{b['currency']}"
         try:
             current = pyupbit.get_current_price(ticker)
             avg = float(b['avg_buy_price'])
+
+            if avg == 0:
+                logging.warning(f"[스킵] {b['currency']}의 평균 매입가가 0임 → 손절/익절 조건 계산 불가")
+                continue
+
             profit = (current - avg) / avg
+
             if profit <= style["loss_cut"] or profit >= style["take_profit"]:
-                upbit.sell_market_order(ticker, float(b['balance']))
-                print(f"[자동매도] {ticker} 수익률: {profit:.2%}")
+                amt = float(b['balance'])
+                price = pyupbit.get_current_price(ticker)
+                order_value = amt * price
+
+                if order_value < 5000:
+                    logging.warning(f"[매도 스킵] {b['currency']} 매도금액이 최소 주문금액(₩5000)보다 작음: 약 {order_value:.2f}원")
+                    continue
+            
+                logging.info(f"[자동매도 시도] {ticker} 수익률: {profit:.2%}, 수량: {amt}")
+                resp = upbit.sell_market_order(ticker, amt)
+
+                if 'error' in resp:
+                    logging.error(f"[매도 실패] {b['currency']}: {resp['error']['message']}")
+                else:
+                    logging.info(f"[매도 성공] {resp}")
+
+                time.sleep(1)
+                updated_balances = upbit.get_balances()
+                logging.info(f"[매도 후 자산] {updated_balances}")
+
         except Exception as e:
-            print(f"[감시 오류] {ticker}: {e}")
+            logging.error(f"[감시 오류] {ticker}: {e}")
         time.sleep(0.3)
+
 
 ### 잔고 출력 ### 
 def log_current_holdings(upbit):

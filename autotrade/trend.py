@@ -9,7 +9,7 @@ import pandas as pd
 
 
 load_dotenv()
-THRESHOLD_PERCENT = 20
+THRESHOLD_PERCENT = 30
 
 # 구글트렌드 시계열 데이터를 가져오는 함수 
 def get_trend_series(keyword: str, timeframe: str, max_retries=3):
@@ -33,8 +33,6 @@ def get_trend_series(keyword: str, timeframe: str, max_retries=3):
                 break
         attempt += 1
     return pd.Series()
-
-
 
 def analyze_trend(coin):
     print("\n\n🔍 트렌드 분석 시작")
@@ -72,3 +70,23 @@ def analyze_trend(coin):
         return True, now
 
     return False, 0.0
+
+
+def get_trend_top5(coin_list):
+    results = []
+
+    for coin in coin_list:
+        trend_series = get_trend_series(coin, "now 1-d")  # 최근 1일치 데이터
+        if trend_series.empty or len(trend_series) < 25:
+            print(f"⚠️ {coin} 데이터 수집 실패 또는 부족")
+            continue
+
+        now = trend_series.iloc[-1]
+        results.append((coin, float(now)))
+
+    # 내림차순 정렬
+    results.sort(key=lambda x: x[1], reverse=True)
+
+    # 상위 5개 반환
+    top5 = [{"coin": coin, "score": score} for coin, score in results[:5]]
+    return top5

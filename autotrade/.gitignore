@@ -33,3 +33,4 @@ autotrade.zip
 .idea/
 .vscode/
 .env
+*.env
