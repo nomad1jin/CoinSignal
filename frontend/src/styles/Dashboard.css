@@ -1,0 +1,100 @@
+/* src/styles/Dashboard.css */
+.dashboard-container {
+  max-width: 1200px;
+  margin: 60px auto;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+.dashboard-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.dashboard-layout {
+  display: flex;
+  gap: 40px;
+  justify-content: space-between;
+}
+
+/* 좌측 영역 */
+.dashboard-left {
+  flex: 2;
+}
+
+/* 우측 영역 */
+.dashboard-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.section {
+  margin-bottom: 30px;
+}
+
+.section-title {
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+.profit-box {
+  background-color: #f8f8f8;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.profit-rate {
+  font-size: 20px;
+  color: red;
+  margin-top: 10px;
+}
+
+.donut-chart-box {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+/* 코인 리스트 */
+.coin-list {
+  list-style: none;
+  padding: 16px;
+  margin-bottom: 20px;
+  background-color: #fafafa;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+}
+
+.coin-list li {
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+  font-size: 16px;
+}
+
+.coin-list li:last-child {
+  border-bottom: none;
+}
+
+/* 웹소설 감성 버튼 */
+.novel-style-button {
+  background: linear-gradient(135deg, #7ed6df, #70a1ff);
+  color: white;
+  font-size: 16px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.novel-style-button:hover {
+  background: linear-gradient(135deg, #70a1ff, #5352ed);
+  transform: scale(1.03);
+}
