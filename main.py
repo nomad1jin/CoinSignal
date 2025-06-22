@@ -1,5 +1,5 @@
 # from autotrade.trend import analyze_trend, get_trend
-from autotrade.trend import get_trend_series, analyze_trend, twitter_search, fetch_reddit_posts
+from autotrade.trend import analyze_trend, twitter_search, fetch_reddit_posts
 from autotrade.crawling_data import twitter_search, fetch_reddit_posts
 from autotrade.analyze_sentiment import build_coin_data_from_csv
 from autotrade.automated_trading import get_user_profile, evaluate_trades, execute_trades, get_current_holdings, monitor_positions
@@ -22,10 +22,10 @@ logging.basicConfig(
 )
 
 COIN_LISTS = [
-    # ['bitcoin', 'ethereum']
-    ['tether', 'ripple', 'solana']
+    ['bitcoin', 'ethereum'],
+    ['tether', 'ripple', 'solana'],
     # ['USD Coin', 'tron']
-    # ['USD Coin', 'tron', 'dogecoin', 'ada', 'sui']
+    ['USD Coin', 'tron', 'dogecoin', 'ada', 'sui']
 ]
 
 # 전역 변수
