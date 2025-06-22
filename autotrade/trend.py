@@ -109,91 +109,195 @@
 #     top5 = [{"coin": coin, "score": score} for coin, score in results[:5]]
 #     return top5
 
-##파이트렌드 윤진
-# # trend.py (검색량 트렌드 관련 함수만)
+#파이트렌드 윤진
+# trend.py (검색량 트렌드 관련 함수만)
+import requests
+import os
+from dotenv import load_dotenv
+from autotrade.crawling_data import twitter_search, fetch_reddit_posts
+from pytrends.request import TrendReq
+import time
+import pandas as pd
+
+
+load_dotenv()
+THRESHOLD_PERCENT = 30
+
+# 구글트렌드 시계열 데이터를 가져오는 함수 
+def get_trend_series(keyword: str, timeframe: str, max_retries=3):
+    pytrends = TrendReq(hl="ko", tz=540)
+    attempt, delay = 0, 60
+
+    while attempt < max_retries:
+        try:
+            pytrends.build_payload([keyword], timeframe=timeframe, geo="", gprop="")
+            data = pytrends.interest_over_time()
+            if not data.empty:
+                return data[keyword]  # 시계열 시리즈 반환
+            else:
+                return pd.Series()
+        except Exception as e:
+            print(f"[Google Trends 오류] {e} - {delay}초 후 재시도")
+            if "429" in str(e):
+                time.sleep(delay)
+                delay = min(delay * 2, 600)
+            else:
+                break
+        attempt += 1
+    return pd.Series()
+
+def analyze_trend(coin):
+    print("\n\n🔍 트렌드 분석 시작")
+
+    trend_series = get_trend_series(coin, "now 1-d")  # 최근 1일치 데이터
+    if trend_series.empty or len(trend_series) < 25:
+        print(f"⚠️ {coin} 데이터 수집 실패 또는 부족")
+        return False, 0.0
+
+    now = trend_series.iloc[-1]
+    val_1h_ago = trend_series.iloc[-7]  # 약 1시간 전 (5~7개마다 1시간 간격)
+    val_4h_ago = trend_series.iloc[-28] if len(trend_series) >= 29 else trend_series.iloc[0]
+    # val_24h_ago = trend_series.iloc[0]
+
+    # 변화율 계산
+    def rate(now, past):
+        return ((now - past) / past) * 100 if past else 0
+
+    change_1h = rate(now, val_1h_ago)
+    change_4h = rate(now, val_4h_ago)
+    # change_24h = rate(now, val_24h_ago)
+
+    # 🔹 출력
+    print(f"\n📈 {coin} 검색량 변화 📉")
+    print(f" - 현재: {now}, 1시간 전: {val_1h_ago}, 4시간 전: {val_4h_ago}")
+    print(f" - 1시간 변화율: {change_1h:.2f}%, 4시간 변화율: {change_4h:.2f}%")
+
+    # if change_1h > THRESHOLD_PERCENT or change_4h > THRESHOLD_PERCENT:
+    #     print(f"🚀 {coin} 급상승!")
+    if change_1h > THRESHOLD_PERCENT:
+        print(f"🚀 {coin} 급상승 (최근 1시간 기준)!")
+        return True, now
+    elif change_1h > 0 and change_4h > THRESHOLD_PERCENT:
+        print(f"🚀 {coin} 급상승 (최근 4시간 기준)!")
+        return True, now
+
+    return False, 0.0
+
+
+def get_trend_top5(coin_list):
+    results = []
+
+    for coin in coin_list:
+        trend_series = get_trend_series(coin, "now 1-d")  # 최근 1일치 데이터
+        if trend_series.empty or len(trend_series) < 25:
+            print(f"⚠️ {coin} 데이터 수집 실패 또는 부족")
+            continue
+
+        now = trend_series.iloc[-1]
+        results.append((coin, float(now)))
+
+    # 내림차순 정렬
+    results.sort(key=lambda x: x[1], reverse=True)
+
+    # 상위 5개 반환
+    top5 = [{"coin": coin, "score": score} for coin, score in results[:5]]
+    return top5
+
+
+# ###예지언니
+# # trend.py (SerpApi 기반 하루 단위 분석)
 # import requests
 # import os
-# from dotenv import load_dotenv
 # from autotrade.crawling_data import twitter_search, fetch_reddit_posts
-# from pytrends.request import TrendReq
-# import time
-# import pandas as pd
-
+# from dotenv import load_dotenv
 
 # load_dotenv()
+
+# SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 # THRESHOLD_PERCENT = 30
 
-# # 구글트렌드 시계열 데이터를 가져오는 함수 
-# def get_trend_series(keyword: str, timeframe: str, max_retries=3):
-#     pytrends = TrendReq(hl="ko", tz=540)
-#     attempt, delay = 0, 60
+# # 🔹 더미로라도 추가해줘야 main.py가 import 오류 안남
+# # def get_trend_series(keyword: str, geo="KR"):
+# #     # 더미 구현 - main.py에서 사용하지 않아도 import 요구해서 넣어줌
+# #     return None
 
-#     while attempt < max_retries:
-#         try:
-#             pytrends.build_payload([keyword], timeframe=timeframe, geo="", gprop="")
-#             data = pytrends.interest_over_time()
-#             if not data.empty:
-#                 return data[keyword]  # 시계열 시리즈 반환
-#             else:
-#                 return pd.Series()
-#         except Exception as e:
-#             print(f"[Google Trends 오류] {e} - {delay}초 후 재시도")
-#             if "429" in str(e):
-#                 time.sleep(delay)
-#                 delay = min(delay * 2, 600)
-#             else:
-#                 break
-#         attempt += 1
-#     return pd.Series()
+# def get_trend_score(keyword, geo="KR"):
+#     url = "https://serpapi.com/search"
+#     params = {
+#         "engine": "google_trends",
+#         "q": keyword,
+#         "geo": "",
+#         "api_key": SERPAPI_API_KEY,
+#         "date": "today 1-m"
+#     }
+#     try:
+#         res = requests.get(url, params=params)
+#         data = res.json()
+#         timeline = data.get("interest_over_time", {}).get("timeline_data", [])
+#         if len(timeline) < 2:
+#             return None
+
+#         # today_entry = timeline[-1]
+#         # yesterday_entry = timeline[-2]
+#         today_entry = timeline[0]
+#         yesterday_entry = timeline[-1]
+
+#         # ✅ 하루 단위인지 확인
+#         if "at" in today_entry["date"]:
+#             print("⚠️ 경고: 하루 단위가 아닌 시간 단위 결과입니다. 분석 제외.")
+#             return NoneS
+
+#         score_today = today_entry["values"][0]["extracted_value"]
+#         score_yesterday = yesterday_entry["values"][0]["extracted_value"]
+
+#         date_today = today_entry["date"]
+#         date_yesterday = yesterday_entry["date"]
+
+#         change = ((score_today - score_yesterday) / max(1, score_yesterday)) * 100
+
+#         return {
+#             "score_today": score_today,
+#             "score_yesterday": score_yesterday,
+#             "date_today": date_today,
+#             "date_yesterday": date_yesterday,
+#             "change_percent": round(change, 2)
+#         }
+#     except Exception as e:
+#         print(f"SerpApi 트렌드 조회 오류: {e}")
+#         return None
+
 
 # def analyze_trend(coin):
-#     print("\n\n🔍 트렌드 분석 시작")
-
-#     trend_series = get_trend_series(coin, "now 1-d")  # 최근 1일치 데이터
-#     if trend_series.empty or len(trend_series) < 25:
-#         print(f"⚠️ {coin} 데이터 수집 실패 또는 부족")
+#     print("\n\n🔍 트렌드 분석 시작 (하루 단위)")
+#     trend = get_trend_score(coin, geo="KR")
+#     if not trend:
+#         print(f"⚠️ {coin} 트렌드 정보 없음")
 #         return False, 0.0
 
-#     now = trend_series.iloc[-1]
-#     val_1h_ago = trend_series.iloc[-7]  # 약 1시간 전 (5~7개마다 1시간 간격)
-#     val_4h_ago = trend_series.iloc[-28] if len(trend_series) >= 29 else trend_series.iloc[0]
-#     # val_24h_ago = trend_series.iloc[0]
+#     print(f"\n📈 [{coin}] 검색량 변화")
+#     print(f" - 어제 {trend['date_yesterday']}: {trend['score_yesterday']}")
+#     print(f" - 오늘 {trend['date_today']}: {trend['score_today']}")
+#     print(f" - 상승률: {trend['change_percent']:.2f}%")
 
-#     # 변화율 계산
-#     def rate(now, past):
-#         return ((now - past) / past) * 100 if past else 0
+#     if trend["change_percent"] > THRESHOLD_PERCENT:
+#         print(f"🚀 {coin} 검색량 급등!")
+#         return True, trend["score_today"]
 
-#     change_1h = rate(now, val_1h_ago)
-#     change_4h = rate(now, val_4h_ago)
-#     # change_24h = rate(now, val_24h_ago)
+#     return False, trend["score_today"]
 
-#     # 🔹 출력
-#     print(f"\n📈 {coin} 검색량 변화 📉")
-#     print(f" - 현재: {now}, 1시간 전: {val_1h_ago}, 4시간 전: {val_4h_ago}")
-#     print(f" - 1시간 변화율: {change_1h:.2f}%, 4시간 변화율: {change_4h:.2f}%")
-
-#     # if change_1h > THRESHOLD_PERCENT or change_4h > THRESHOLD_PERCENT:
-#     #     print(f"🚀 {coin} 급상승!")
-#     if change_1h > THRESHOLD_PERCENT:
-#         print(f"🚀 {coin} 급상승 (최근 1시간 기준)!")
-#         return True, now
-#     elif change_1h > 0 and change_4h > THRESHOLD_PERCENT:
-#         print(f"🚀 {coin} 급상승 (최근 4시간 기준)!")
-#         return True, now
-
-#     return False, 0.0
 
 
 # def get_trend_top5(coin_list):
 #     results = []
 
 #     for coin in coin_list:
-#         trend_series = get_trend_series(coin, "now 1-d")  # 최근 1일치 데이터
-#         if trend_series.empty or len(trend_series) < 25:
-#             print(f"⚠️ {coin} 데이터 수집 실패 또는 부족")
-#             continue
+#         trend_series = get_trend_score(coin, geo="KR")
+#         # if trend_series.empty or len(trend_series) < 25:
+#         #     print(f"⚠️ {coin} 데이터 수집 실패 또는 부족")
+#         #     continue
 
-#         now = trend_series.iloc[-1]
+#         print(f" - 오늘 {trend['date_today']}: {trend['score_today']}")
+#         now = trend['score_today']
 #         results.append((coin, float(now)))
 
 #     # 내림차순 정렬
@@ -202,5 +306,3 @@
 #     # 상위 5개 반환
 #     top5 = [{"coin": coin, "score": score} for coin, score in results[:5]]
 #     return top5
-
-

@@ -44,12 +44,12 @@ COIN_TICKER_MAP = {
 def get_default_profile(style):
     defaults = {
         "test": {
-            "max_daily_invest": 25000, "loss_cut": -0.01, "take_profit": 0.01,
-            "max_coin_count": 5
+            "max_daily_invest": 22000, "loss_cut": -0.01, "take_profit": 0.01,
+            "max_coin_count": 4
         },
         "neutral": {
-            "max_daily_invest": 50000, "loss_cut": -0.05, "take_profit": 0.05,
-            "max_coin_count": 5
+            "max_daily_invest": 42000, "loss_cut": -0.05, "take_profit": 0.05,
+            "max_coin_count": 4
         }
     }
     return defaults.get(style, defaults["neutral"])

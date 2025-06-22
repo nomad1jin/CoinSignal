@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Query
 import time
+from datetime import datetime
 from autotrade.trend import analyze_trend
 from autotrade.crawling_data import twitter_search, fetch_reddit_posts
 from autotrade.analyze_sentiment import build_coin_data_from_csv
@@ -13,7 +14,22 @@ import logging
 router = APIRouter()
 
 # COIN_LIST = ['bitcoin', 'ethereum', 'solana', 'tron', 'dogecoin', 'xrp', 'ada', 'sui']
-COIN_LIST = ['bitcoin', 'ethereum']
+COIN_LIST = ['bitcoin', 'ethereum', 'solana']
+
+# 진행중인 단계 - 전역 상태 저장 딕셔너리
+autotrade_status = {
+    "stage": "대기 중",
+    "coin": None,
+    "retry": 0,
+    "last_updated": str(datetime.now())
+}
+
+def update_status(stage, coin=None, retry=0):
+    autotrade_status["stage"] = stage
+    autotrade_status["coin"] = coin
+    autotrade_status["retry"] = retry
+    autotrade_status["last_updated"] = str(datetime.now())
+
 
 # coin_list를 두고 이에 대한 트렌드+크롤링+감정분석+자동매매
 @router.post("/autotrade/start")
@@ -74,12 +90,14 @@ def start_autotrade_coin(coin: str = Query(..., description="코인 이름(예:b
     retry_count = 0
 
     while True:
+        update_status("트렌드 분석 중", coin=coin, retry=retry_count)
         is_hot, trend_score = analyze_trend(coin)
         if is_hot:
             break
 
         retry_count += 1
         if retry_count >= max_retry:
+            update_status("급상승 실패", coin=coin, retry=retry_count)
             return {
                 "success": False,
                 "message": f"📉 [{coin}]은 {max_retry}회 확인했지만 급상승하지 않았습니다.",
@@ -87,21 +105,31 @@ def start_autotrade_coin(coin: str = Query(..., description="코인 이름(예:b
             }
 
         print(f"🔁 [{coin}] 급상승 아님 → {retry_delay}초 후 재시도 ({retry_count}/{max_retry})")
+        update_status("급상승 아님 → 60초 후 재시도", coin=coin, retry=retry_count)
         time.sleep(retry_delay)
 
     # 🔍 크롤링
     logging.info("\n🔥 급등한" f"{coin}코인의 트위터 데이터 크롤링")
+    update_status("트위터 크롤링 중", coin)
     twitter_search(coin)
+
     logging.info("\n🔥 급등한" f"{coin}코인의 레딧 데이터 크롤링")
+    update_status("레딧 크롤링 중", coin)
     fetch_reddit_posts(coin)
 
     # 📊 감정 분석
+    update_status("감정 분석 중", coin)
     coin_data = build_coin_data_from_csv(coin, trend_score, holdings)
     logging.info(f"[{coin}] 감정 분석 결과: {coin_data}")
 
     # 💡 매매 판단 + 실행
+    update_status("매매 판단 중", coin)
     buy_order, sell_order = evaluate_trades(coin_data, user_settings)
+
+    update_status("매매 실행 중", coin)
     execute_trades(buy_order, sell_order)
+
+    update_status("자동매매 완료", coin)
 
     return {
         "success": True,
@@ -112,6 +140,17 @@ def start_autotrade_coin(coin: str = Query(..., description="코인 이름(예:b
             "sell_order": sell_order
         }
     }
+
+    
+### 현재 실행 상태 get
+@router.get("/autotrade/status")
+def get_autotrade_status():
+    return {
+        "success": True,
+        "message": "현재 자동매매 상태입니다.",
+        "data": autotrade_status
+    }
+
 
 
 
