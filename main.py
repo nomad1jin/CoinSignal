@@ -1,6 +1,6 @@
 # from autotrade.trend import analyze_trend, get_trend
-from autotrade.trend import analyze_trend, twitter_search, fetch_reddit_posts
-from autotrade.crawling_data import twitter_search, fetch_reddit_posts
+from autotrade.trend import analyze_trend
+from autotrade.crawling_data import save_merged_data, twitter_search, fetch_reddit_posts
 from autotrade.analyze_sentiment import build_coin_data_from_csv
 from autotrade.automated_trading import get_user_profile, evaluate_trades, execute_trades, get_current_holdings, monitor_positions
 
@@ -22,8 +22,8 @@ logging.basicConfig(
 )
 
 COIN_LISTS = [
-    ['bitcoin', 'ethereum'],
-    ['tether', 'ripple', 'solana'],
+    # ['bitcoin', 'ethereum'],
+    # ['tether', 'ripple', 'solana']
     # ['USD Coin', 'tron']
     ['USD Coin', 'tron', 'dogecoin', 'ada', 'sui']
 ]
@@ -48,9 +48,12 @@ def run_once_trend_and_sentiment():
     # 급등 코인에 대해 감정 분석 수행
     for coin, trend_score in hot_coins:
         logging.info("\n🔥 급등한" f"[{coin}]코인의 트위터 데이터 크롤링")
-        twitter_search(coin)      
+        tweets = twitter_search(coin)      
         logging.info("\n🔥 급등한" f"[{coin}]코인의 레딧 데이터 크롤링")
-        fetch_reddit_posts(coin)
+        reddits = fetch_reddit_posts(coin)
+        
+        save_merged_data(coin, tweets, reddits)
+    
         coin_data = build_coin_data_from_csv(coin, trend_score, holdings)
         logging.info(f"[{coin}] 감정 분석 결과: {coin_data}")
         all_coin_data.update(coin_data)

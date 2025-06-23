@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from bs4 import BeautifulSoup
 import os
 from dotenv import load_dotenv
+from autotrade.preprocessing import clean_messages
 
 # ✅ Colab용 WebDriver
 import undetected_chromedriver as uc
@@ -15,6 +16,19 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+
+# from selenium import webdriver
+# from selenium.webdriver.chrome.service import Service
+# from selenium.webdriver.common.by import By
+# from selenium.webdriver.common.keys import Keys
+# from selenium.webdriver.chrome.options import Options
+# from selenium.webdriver.support.ui import WebDriverWait
+# from selenium.webdriver.support import expected_conditions as EC
+# from webdriver_manager.chrome import ChromeDriverManager
+
+
+
+
 # 🔹 Reddit API 인증 정보
 load_dotenv()
 CLIENT_ID = os.getenv("CLIENT_ID")
@@ -22,13 +36,69 @@ CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 USER_AGENT = os.getenv("USER_AGENT")
 X_EMAIL = os.getenv("X_EMAIL")
 X_PASSWORD = os.getenv("X_PASSWORD")
+SAVE_PATH = r"C:\상명대\2025 1학기\미래설계\자동매매_윤진"
 
+# def twitter_search(coin):
+#     options = Options()
+#     options.add_argument("--start-maximized")
+#     service = Service(ChromeDriverManager().install())
+#     driver = webdriver.Chrome(service=service, options=options)
+#     driver.get("https://x.com/login")
+#     time.sleep(3)
+#     try:
+#         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, "text"))).send_keys(X_EMAIL, Keys.RETURN)
+#         time.sleep(3)
+#         driver.find_element(By.NAME, "password").send_keys(X_PASSWORD, Keys.RETURN)
+#         time.sleep(5)
+#         driver.get("https://x.com/explore")
+#         time.sleep(3)
+#         search_input = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//input[@data-testid='SearchBox_Search_Input']")))
+#         search_input.clear()
+#         search_input.send_keys(coin, Keys.RETURN)
+#         time.sleep(5)
+#         driver.find_element(By.XPATH, "//span[text()='Latest']").click()
+#         time.sleep(5)
+
+#         tweet_data = set()
+#         for _ in range(50):
+#             soup = BeautifulSoup(driver.page_source, "html.parser")
+#             for article in soup.find_all("article"):
+#                 try:
+#                     spans = article.find_all("span")
+#                     display_name, username = "", ""
+#                     for span in spans:
+#                         txt = span.get_text(strip=True)
+#                         if txt.startswith("@") and not username:
+#                             username = txt
+#                         elif not txt.startswith("@") and not display_name:
+#                             display_name = txt
+#                     tweet_div = article.find("div", {"data-testid": "tweetText"})
+#                     if tweet_div:
+#                         tweet_text = " ".join(span.get_text(strip=True) for span in tweet_div.find_all("span"))
+#                         tweet_data.add((coin, display_name, username, tweet_text))
+#                 except:
+#                     continue
+#             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+#             time.sleep(2)
+
+#         all_tweets = list(tweet_data)[:250]
+#         texts = [row[3] for row in all_tweets]
+#         print(f"📄 Twitter 크롤링 완료 ({len(all_tweets)}개 트윗 저장)")
+
+#         cleaner, _ = clean_messages(texts)
+
+#         return [row for row in all_tweets if cleaner(row[3])]
+    
+#     except Exception as e:
+#         print(f"Twitter 오류: {e}")
+#         return []
+    
+#     finally:
+#         driver.quit()
 
 def twitter_search(coin):
     options = uc.ChromeOptions()
     options.add_argument("--start-maximized")
-    # options.binary_location = "C:/Program Files/Google/Chrome/Application/chrome.exe"  # 필요시 사용
-
     driver = uc.Chrome(options=options)
 
     try:
@@ -105,56 +175,112 @@ def twitter_search(coin):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             time.sleep(2)
 
-        all_tweets = list(tweet_data)[:200]
-        with open("tweets_data.csv", "w", encoding="utf-8-sig", newline="") as file:
-            writer = csv.writer(file)
-            writer.writerow(["Coin", "DisplayName", "Username", "Tweet"])
-            writer.writerows(all_tweets)
+        all_tweets = list(tweet_data)[:250]
+        # with open("tweets_data.csv", "w", encoding="utf-8-sig", newline="") as file:
+        #     writer = csv.writer(file)
+        #     writer.writerow(["Coin", "DisplayName", "Username", "Tweet"])
+        #     writer.writerows(all_tweets)
 
         print(f"📄 Twitter 크롤링 완료 ({len(all_tweets)}개 트윗 저장)")
+
+        tweet_texts = [row[3] for row in all_tweets]
+        cleaner, _ = clean_messages(tweet_texts)
+        
+        return [
+            (coin, display_name, username, text)
+            for coin, display_name, username, text in all_tweets
+            if cleaner(text)
+        ]
 
     except Exception as e:
         print(f"❌ Twitter 크롤링 오류: {e}")
     finally:
         driver.quit()
 
-
 def fetch_reddit_posts(coin, limit=200, days=30):
     reddit = praw.Reddit(client_id=CLIENT_ID, client_secret=CLIENT_SECRET, user_agent=USER_AGENT)
-    cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff = datetime.utcnow() - timedelta(days=days)
     results = []
-    subreddit = reddit.subreddit('all')
-
     try:
-        for post in subreddit.search(coin, limit=limit, sort='new', time_filter='day'):
-            # ✅ timezone-aware datetime으로 변환
-            post_date = pd.to_datetime(post.created_utc, unit='s', utc=True)
-
-            if post_date < cutoff_date:
+        for post in reddit.subreddit('all').search(coin, limit=limit, sort='new', time_filter='day'):
+            post_date = pd.to_datetime(post.created_utc, unit='s')
+            
+            if post_date < cutoff:
                 continue
 
-            post_content = f"{post.title} {post.selftext}"
-            if coin.lower() in post_content.lower():
-                results.append({
-                    'Coin': coin,
-                    'Type': 'Post',
-                    'Author': post.author.name if post.author else 'Unknown',
-                    'Content': post_content
-                })
-
+            content = f"{post.title} {post.selftext}"
+            if coin.lower() in content.lower():
+                results.append({'Coin': coin, 
+                                'Type': 'Post', 
+                                'Author': post.author.name if post.author else 'Unknown', 
+                                'Content': content})
+                
             post.comments.replace_more(limit=0)
             for comment in post.comments:
                 if coin.lower() in comment.body.lower():
                     results.append({
                         'Coin': coin,
-                        'Type': 'Comment',
-                        'Author': comment.author.name if comment.author else 'Unknown',
-                        'Content': comment.body
-                    })
-
+                        'Type': 'Comment', 
+                        'Author': comment.author.name if comment.author else 'Unknown', 
+                        'Content': comment.body})
+                    
     except Exception as e:
         print(f"⚠️ Reddit 데이터 수집 오류: {e}")
+    texts = [row['Content'] for row in results]
+    print(f"📄 Reddit 데이터 저장 완료 ({len(results)}개)")
 
-    if results:
-        pd.DataFrame(results).to_csv("reddit_data.csv", index=False, encoding="utf-8-sig", errors='ignore')
-        print(f"📄 Reddit 데이터 저장 완료 ({len(results)}개)")
+    cleaner, _ = clean_messages(texts)
+
+    return [row for row in results if cleaner(row['Content'])]
+
+# ✅ 저장
+def save_merged_data(coin, tweets, reddits):
+    tweet_df = pd.DataFrame(tweets, columns=["Coin", "DisplayName", "Username", "Content"])
+    tweet_df["Type"] = "Tweet"
+    reddit_df = pd.DataFrame(reddits)
+    reddit_df = reddit_df.rename(columns={"Author": "Username"})
+    tweet_df = tweet_df[reddit_df.columns]
+    merged_df = pd.concat([tweet_df, reddit_df], ignore_index=True)
+    file_name = os.path.join(SAVE_PATH, f"{coin}_merged_data.csv")
+    merged_df.to_csv(file_name, index=False, encoding="utf-8-sig")
+    print(f"📁 {file_name} 저장 완료 ({len(merged_df)}개)")
+
+# def fetch_reddit_posts(coin, limit=200, days=30):
+#     reddit = praw.Reddit(client_id=CLIENT_ID, client_secret=CLIENT_SECRET, user_agent=USER_AGENT)
+#     cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+#     results = []
+#     subreddit = reddit.subreddit('all')
+
+#     try:
+#         for post in subreddit.search(coin, limit=limit, sort='new', time_filter='day'):
+#             # ✅ timezone-aware datetime으로 변환
+#             post_date = pd.to_datetime(post.created_utc, unit='s', utc=True)
+
+#             if post_date < cutoff_date:
+#                 continue
+
+#             post_content = f"{post.title} {post.selftext}"
+#             if coin.lower() in post_content.lower():
+#                 results.append({
+#                     'Coin': coin,
+#                     'Type': 'Post',
+#                     'Author': post.author.name if post.author else 'Unknown',
+#                     'Content': post_content
+#                 })
+
+#             post.comments.replace_more(limit=0)
+#             for comment in post.comments:
+#                 if coin.lower() in comment.body.lower():
+#                     results.append({
+#                         'Coin': coin,
+#                         'Type': 'Comment',
+#                         'Author': comment.author.name if comment.author else 'Unknown',
+#                         'Content': comment.body
+#                     })
+
+#     except Exception as e:
+#         print(f"⚠️ Reddit 데이터 수집 오류: {e}")
+
+#     if results:
+#         pd.DataFrame(results).to_csv("reddit_data.csv", index=False, encoding="utf-8-sig", errors='ignore')
+#         print(f"📄 Reddit 데이터 저장 완료 ({len(results)}개)")

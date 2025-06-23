@@ -58,33 +58,21 @@ def build_coin_data_from_csv(coin_name: str, trend_score: float, holdings: dict)
     coin_key = coin_name.lower()    #보유중인지 
 
     # 데이터 로딩
-    tweet_df = pd.read_csv("tweets_data.csv")
-    reddit_df = pd.read_csv("reddit_data.csv")
-
-    # 텍스트 추출
-    all_texts = []
+    merged_df = pd.read_csv(f"{coin_name}_merged_data.csv")
 
     try:
-        tweet_rows = tweet_df[tweet_df["Coin"].str.lower() == coin_name.lower()]
-        tweet_texts = tweet_rows["Tweet"].dropna().tolist()
-        all_texts.extend(tweet_texts)
+        merged_df = pd.read_csv(f"{coin_name}_merged_data.csv")
+        texts = merged_df["Content"].dropna().tolist()
     except Exception as e:
-        print(f"트윗 파일 로딩 오류: {e}")
+        print(f"[오류] {coin_name}_merged_data.csv 로딩 실패: {e}")
+        return {}
 
-    # 레딧 데이터 읽기 + 필터 + 'Content' 컬럼 사용
-    try:
-        reddit_rows = reddit_df[reddit_df["Coin"].str.lower() == coin_name.lower()]
-        reddit_texts = reddit_rows["Content"].dropna().tolist()
-        all_texts.extend(reddit_texts)
-    except Exception as e:
-        print(f"레딧 파일 로딩 오류: {e}")
-
-    # 감정 분석
-    emotion_label, emotion_counts = analyze_sentiments(all_texts)
+    # 감정 분석 실행
+    emotion_label, emotion_counts = analyze_sentiments(texts)
 
     # coin_data 딕셔너리 반환
     return {
-        coin_name.lower(): {
+        coin_key: {
             "trend": trend_normalized,
             "emotion": emotion_label,
             "emotion_counts": emotion_counts,
@@ -92,3 +80,42 @@ def build_coin_data_from_csv(coin_name: str, trend_score: float, holdings: dict)
         }
     }
 
+# def fetch_reddit_posts(coin, limit=200, days=30):
+#     reddit = praw.Reddit(client_id=CLIENT_ID, client_secret=CLIENT_SECRET, user_agent=USER_AGENT)
+#     cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+#     results = []
+#     subreddit = reddit.subreddit('all')
+
+#     try:
+#         for post in subreddit.search(coin, limit=limit, sort='new', time_filter='day'):
+#             # ✅ timezone-aware datetime으로 변환
+#             post_date = pd.to_datetime(post.created_utc, unit='s', utc=True)
+
+#             if post_date < cutoff_date:
+#                 continue
+
+#             post_content = f"{post.title} {post.selftext}"
+#             if coin.lower() in post_content.lower():
+#                 results.append({
+#                     'Coin': coin,
+#                     'Type': 'Post',
+#                     'Author': post.author.name if post.author else 'Unknown',
+#                     'Content': post_content
+#                 })
+
+#             post.comments.replace_more(limit=0)
+#             for comment in post.comments:
+#                 if coin.lower() in comment.body.lower():
+#                     results.append({
+#                         'Coin': coin,
+#                         'Type': 'Comment',
+#                         'Author': comment.author.name if comment.author else 'Unknown',
+#                         'Content': comment.body
+#                     })
+
+#     except Exception as e:
+#         print(f"⚠️ Reddit 데이터 수집 오류: {e}")
+
+#     if results:
+#         pd.DataFrame(results).to_csv("reddit_data.csv", index=False, encoding="utf-8-sig", errors='ignore')
+#         print(f"📄 Reddit 데이터 저장 완료 ({len(results)}개)")
