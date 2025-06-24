@@ -1,0 +1,123 @@
+/* src/styles/Dashboard.css */
+.dashboard-container {
+  max-width: 1200px;
+  margin: 60px auto;
+  padding: 20px;
+  font-family: 'Pretendard', 'Arial', sans-serif;
+  background-color: #f5f7fa;
+}
+
+.dashboard-title {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 40px;
+  text-align: center;
+  color: #2c3e50;
+}
+
+.dashboard-layout {
+  display: flex;
+  gap: 40px;
+  justify-content: space-between;
+}
+
+/* 좌측 영역 */
+.dashboard-left {
+  flex: 2;
+}
+
+/* 우측 영역 */
+.dashboard-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* 공통 섹션 스타일 */
+.section {
+  margin-bottom: 40px;
+  background-color: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 20px;
+  margin-bottom: 20px;
+  font-weight: 700;
+  color: #34495e;
+  border-left: 6px solid #70a1ff;
+  padding-left: 12px;
+}
+
+/* 투자 수익률 */
+.profit-box {
+  background-color: #f0f6ff;
+  padding: 20px;
+  border-radius: 12px;
+  line-height: 1.6;
+  color: #2c3e50;
+}
+
+.profit-rate {
+  font-size: 22px;
+  font-weight: bold;
+  margin-top: 12px;
+  color: #e74c3c;
+}
+
+/* 도넛 차트 영역 */
+.donut-chart-box {
+  background-color: #fff;
+  border: 1px solid #dcdde1;
+  padding: 20px;
+  border-radius: 16px;
+  text-align: center;
+  min-height: 300px;
+}
+
+/* 핫한 코인 리스트 */
+.coin-list {
+  list-style: none;
+  padding: 16px;
+  margin: 0;
+  background-color: #ffffff;
+  border: 1px solid #dcdde1;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.coin-list li {
+  padding: 12px;
+  border-bottom: 1px solid #ecf0f1;
+  font-size: 15px;
+  color: #2c3e50;
+  display: flex;
+  justify-content: space-between;
+}
+
+.coin-list li:last-child {
+  border-bottom: none;
+}
+
+/* 웹소설 감성 버튼 */
+.novel-style-button {
+  background: linear-gradient(135deg, #7ed6df, #70a1ff);
+  color: white;
+  font-size: 16px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+  font-weight: bold;
+}
+
+.novel-style-button:hover {
+  background: linear-gradient(135deg, #70a1ff, #5352ed);
+  transform: scale(1.03);
+}
