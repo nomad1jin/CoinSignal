@@ -54,7 +54,7 @@ app.include_router(autotrade_router)
 def root():
     return {"message": "🚀 자동매매 API 서버 정상 작동 중"}
 
-
+### 비동기 루프 함수 - 손절/익절 1분마다 감시용
 async def background_monitor():
     while True:
         user_settings = user_settings_store.get("default")

@@ -49,6 +49,30 @@ def analyze_trend(coin, ratio_threshold=1.3, recent_points=6):
     else:
         print(f"🟢 평소 수준입니다.")
         return False, trend_series.iloc[-1]
+    
+
+    """
+    각 코인의 최근 검색량을 기준으로 내림차순 정렬하여 상위 top_k 코인을 반환
+    """
+def get_trend_top5(coin_list, top_k=5):
+    trend_scores = []
+
+    for coin in coin_list:
+        series = get_trend_series(coin)
+        if series.empty:
+            continue
+        recent_value = series.iloc[-1]
+        trend_scores.append((coin, recent_value))
+
+    trend_scores.sort(key=lambda x: x[1], reverse=True)
+
+    # ✅ 'score'라는 키로 변환해서 리턴
+    return [
+        {"coin": coin, "score": float(value)}  # float 변환으로 JSON 직렬화 안전
+        for coin, value in trend_scores[:top_k]
+    ]
+
+
 
 # from pytrends.request import TrendReq
 

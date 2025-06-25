@@ -4,7 +4,7 @@ from fastapi import APIRouter, Query
 import time
 from datetime import datetime
 from autotrade.trend import analyze_trend
-from autotrade.crawling_data import twitter_search, fetch_reddit_posts
+from autotrade.crawling_data import twitter_search, fetch_reddit_posts, save_merged_data
 from autotrade.analyze_sentiment import build_coin_data_from_csv
 from autotrade.automated_trading import evaluate_trades, execute_trades, get_current_holdings
 from autotrade.user_router import user_settings_store
@@ -14,7 +14,7 @@ import logging
 router = APIRouter()
 
 # COIN_LIST = ['bitcoin', 'ethereum', 'solana', 'tron', 'dogecoin', 'xrp', 'ada', 'sui']
-COIN_LIST = ['bitcoin', 'ethereum', 'solana']
+COIN_LIST = ['bitcoin']
 
 # 진행중인 단계 - 전역 상태 저장 딕셔너리
 autotrade_status = {
@@ -53,8 +53,15 @@ def start_autotrade():
             continue    # 급상승 아니면 크롤링·감정분석 생략
 
         # 🔍 크롤링
-        twitter_search(coin)
-        fetch_reddit_posts(coin)
+        logging.info("\n🔥 급등한" f"{coin}코인의 트위터 데이터 크롤링")
+        update_status("트위터 크롤링 중", coin)
+        tweets = twitter_search(coin)
+
+        logging.info("\n🔥 급등한" f"{coin}코인의 레딧 데이터 크롤링")
+        update_status("레딧 크롤링 중", coin)
+        reddits = fetch_reddit_posts(coin)
+
+        save_merged_data(coin, tweets, reddits)
 
         # 📊 감정 분석 결과 저장
         coin_data = build_coin_data_from_csv(coin, trend_score, holdings)
@@ -121,13 +128,15 @@ def start_autotrade_coin(coin: str = Query(..., description="코인 이름(예:b
     # 🔍 크롤링
     logging.info("\n🔥 급등한" f"{coin}코인의 트위터 데이터 크롤링")
     update_status("트위터 크롤링 중", coin)
-    twitter_search(coin)
+    tweets = twitter_search(coin)
 
     logging.info("\n🔥 급등한" f"{coin}코인의 레딧 데이터 크롤링")
     update_status("레딧 크롤링 중", coin)
-    fetch_reddit_posts(coin)
+    reddits = fetch_reddit_posts(coin)
 
-    # 📊 감정 분석
+    save_merged_data(coin, tweets, reddits)
+
+    # 📊 감정 분석  
     update_status("감정 분석 중", coin)
     coin_data = build_coin_data_from_csv(coin, trend_score, holdings)
     logging.info(f"[{coin}] 감정 분석 결과: {coin_data}")
