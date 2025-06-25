@@ -3,14 +3,16 @@
   max-width: 1200px;
   margin: 60px auto;
   padding: 20px;
-  font-family: 'Arial', sans-serif;
+  font-family: 'Pretendard', 'Arial', sans-serif;
+  background-color: #f5f7fa;
 }
 
 .dashboard-title {
-  font-size: 28px;
-  font-weight: bold;
+  font-size: 32px;
+  font-weight: 800;
   margin-bottom: 40px;
   text-align: center;
+  color: #2c3e50;
 }
 
 .dashboard-layout {
@@ -29,52 +31,71 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
+/* 공통 섹션 스타일 */
 .section {
-  margin-bottom: 30px;
+  margin-bottom: 40px;
+  background-color: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .section-title {
   font-size: 20px;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  font-weight: 700;
+  color: #34495e;
+  border-left: 6px solid #70a1ff;
+  padding-left: 12px;
 }
 
+/* 투자 수익률 */
 .profit-box {
-  background-color: #f8f8f8;
+  background-color: #f0f6ff;
   padding: 20px;
   border-radius: 12px;
+  line-height: 1.6;
+  color: #2c3e50;
 }
 
 .profit-rate {
-  font-size: 20px;
-  color: red;
-  margin-top: 10px;
+  font-size: 22px;
+  font-weight: bold;
+  margin-top: 12px;
+  color: #e74c3c;
 }
 
+/* 도넛 차트 영역 */
 .donut-chart-box {
   background-color: #fff;
-  border: 1px solid #ddd;
-  padding: 40px;
-  border-radius: 12px;
+  border: 1px solid #dcdde1;
+  padding: 20px;
+  border-radius: 16px;
   text-align: center;
+  min-height: 300px;
 }
 
-/* 코인 리스트 */
+/* 핫한 코인 리스트 */
 .coin-list {
   list-style: none;
   padding: 16px;
-  margin-bottom: 20px;
-  background-color: #fafafa;
-  border: 1px solid #ccc;
-  border-radius: 12px;
+  margin: 0;
+  background-color: #ffffff;
+  border: 1px solid #dcdde1;
+  border-radius: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
 .coin-list li {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-  font-size: 16px;
+  padding: 12px;
+  border-bottom: 1px solid #ecf0f1;
+  font-size: 15px;
+  color: #2c3e50;
+  display: flex;
+  justify-content: space-between;
 }
 
 .coin-list li:last-child {
@@ -89,9 +110,11 @@
   padding: 14px 20px;
   border: none;
   border-radius: 20px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: all 0.3s ease;
+  margin-top: 20px;
+  font-weight: bold;
 }
 
 .novel-style-button:hover {
