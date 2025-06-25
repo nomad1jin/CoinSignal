@@ -34,3 +34,5 @@ autotrade.zip
 .vscode/
 .env
 *.env
+__pycache__/
+*.pyc
