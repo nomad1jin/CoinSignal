@@ -39,11 +39,16 @@ def start_autotrade():
 
     user_settings = user_settings_store["default"]
     holdings = get_current_holdings()
+    # 임시 테스트용 코드
+    TEST_MODE = True   # ← 나중에 False로만 바꾸면 끝
 
     all_coin_data = {}
 
     for coin in COIN_LIST:
-        is_hot, trend_score = analyze_trend(coin)
+        if TEST_MODE:
+            is_hot, trend_score = True, 100
+        else:
+            is_hot, trend_score = analyze_trend(coin)
         if not is_hot:
             continue    # 급상승 아니면 크롤링·감정분석 생략
 
@@ -83,6 +88,8 @@ def start_autotrade_coin(coin: str = Query(..., description="코인 이름(예:b
     coin = coin.strip().lower()
     user_settings = user_settings_store["default"]
     holdings = get_current_holdings()
+    # 임시 테스트용 코드
+    TEST_MODE = True   # ← 나중에 False로만 바꾸면 끝
 
     # 급상승할 때까지 반복
     max_retry = 10
@@ -91,7 +98,10 @@ def start_autotrade_coin(coin: str = Query(..., description="코인 이름(예:b
 
     while True:
         update_status("트렌드 분석 중", coin=coin, retry=retry_count)
-        is_hot, trend_score = analyze_trend(coin)
+        if TEST_MODE:
+            is_hot, trend_score = True, 100
+        else:
+            is_hot, trend_score = analyze_trend(coin)
         if is_hot:
             break
 

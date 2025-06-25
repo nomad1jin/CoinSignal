@@ -1,7 +1,11 @@
 from fastapi import FastAPI
+import asyncio
+import logging
 from autotrade.dashboard_router import router as dashboard_router
 from autotrade.user_router import router as user_router
 from autotrade.autotrade_router import router as autotrade_router
+from autotrade.automated_trading import monitor_positions
+from autotrade.user_router import user_settings_store
 
 app = FastAPI(
     title="AutoTrading API",
@@ -17,3 +21,24 @@ app.include_router(autotrade_router)
 @app.get("/")
 def root():
     return {"message": "🚀 자동매매 API 서버 정상 작동 중"}
+
+
+async def background_monitor():
+    while True:
+        user_settings = user_settings_store.get("default")
+
+        if user_settings is None:
+            logging.warning("[감시 대기] 사용자 설정 없음. POST /user/info 필요")
+        else:
+            try:
+                logging.info("[감시 시작] 사용자 설정 기반으로 monitor_positions 실행")
+                monitor_positions(user_settings)  # 1회 실행
+            except Exception as e:
+                logging.error(f"[감시 오류] monitor_positions 실패: {e}")
+
+        await asyncio.sleep(60)  # 1분 주기로 반복
+
+### 서버가 켜지면 자동 실행되는 서버 이벤트 
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(background_monitor())

@@ -32,9 +32,6 @@ COIN_TICKER_MAP = {
     "sui": "SUI"
 }
 
-# 알파: 감정 점수 반영
-# 베타: 상승률 반영 
-# buy_limit_pct: 한 종목당 매수 비중
 # max_daily_invest: 일일 투자 금액
 # loss_cut: 손절 기준
 # take_profit: 익절 기준

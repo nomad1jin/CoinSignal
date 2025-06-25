@@ -1,5 +1,5 @@
 from fastapi import FastAPI, APIRouter
-from autotrade.trend import get_trend_top5
+# from autotrade.trend import get_trend_top5
 import pyupbit
 import os
 from dotenv import load_dotenv
@@ -9,16 +9,16 @@ router = APIRouter()
 load_dotenv()
 upbit = pyupbit.Upbit(os.getenv("access"), os.getenv("secret"))
 
-@router.get("/trending")
-def get_trending():
-    # coin_list = ['bitcoin', 'ethereum', 'tether', 'ripple', 'solana', 'USD Coin', 'tron', 'dogecoin', 'ada', 'sui']
-    coin_list = ['solana', 'ada', 'tron']
-    top5 = get_trend_top5(coin_list)
-    return {
-        "success": True,
-        "message": "지금 핫한 코인 top5", 
-        "data": top5
-    }
+# @router.get("/trending")
+# def get_trending():
+#     # coin_list = ['bitcoin', 'ethereum', 'tether', 'ripple', 'solana', 'USD Coin', 'tron', 'dogecoin', 'ada', 'sui']
+#     coin_list = ['solana', 'ada', 'tron']
+#     top5 = get_trend_top5(coin_list)
+#     return {
+#         "success": True,
+#         "message": "지금 핫한 코인 top5", 
+#         "data": top5
+#     }
 
 @router.get("/performance")
 def get_investment_performance():
@@ -96,31 +96,32 @@ def get_allocation():
     }
 
 
-@router.get("/history")
-def get_recent_order():
-    try: 
-        orders = upbit.get_order_list(state="done", kind="normal")
+#### 최근 매매 내역을 불러오는 건 업비트API에서 제공 안 해줌 
+# @router.get("/history")
+# def get_recent_order():
+#     try: 
+#         orders = upbit.get_order_list(state="done", kind="normal")
 
-        recent = []
-        for order in sorted(orders, key=lambda x: x["created_at"], reverse=True)[:5]:
-            recent.append({
-                "coin": order["market"].replace("KRW-", ""),
-                "side": "매수" if order["side"] == "bid" else "매도",
-                "price": float(order["price"]),
-                "volume": float(order["volume"]),
-                "total": float(order["price"]) * float(order["volume"]),
-                "time": order["created_at"]
-            })
+#         recent = []
+#         for order in sorted(orders, key=lambda x: x["created_at"], reverse=True)[:5]:
+#             recent.append({
+#                 "coin": order["market"].replace("KRW-", ""),
+#                 "side": "매수" if order["side"] == "bid" else "매도",
+#                 "price": float(order["price"]),
+#                 "volume": float(order["volume"]),
+#                 "total": float(order["price"]) * float(order["volume"]),
+#                 "time": order["created_at"]
+#             })
 
-        return {
-            "success": True,
-            "message": "최근 체결 내역 5개",
-            "data": recent
-        }
+#         return {
+#             "success": True,
+#             "message": "최근 체결 내역 5개",
+#             "data": recent
+#         }
 
-    except Exception as e:
-        return {
-            "success": False,
-            "message": f"체결 내역 조회 실패: {str(e)}",
-            "data": None
-        }
+#     except Exception as e:
+#         return {
+#             "success": False,
+#             "message": f"체결 내역 조회 실패: {str(e)}",
+#             "data": None
+#         }
