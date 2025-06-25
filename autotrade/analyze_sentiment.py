@@ -41,16 +41,6 @@ def analyze_sentiments(texts: list[str]) -> tuple[int, dict]:
     final_label = max(count, key=count.get)
     return final_label , counts_dict
 
-# def analyze_sentiments(texts: list[str]) -> int:
-#     results = []
-#     for text in texts[:350]:  # 최대 350개
-#         pred = analyze_sentiment(text[:512])  # 길이 제한
-#         results.append(pred)
-
-#     if not results:
-#         return 1  # 중립 기본값
-#     return max(set(results), key=results.count)  # 최빈값 반환
-
 def build_coin_data_from_csv(coin_name: str, trend_score: float, holdings: dict):
     print("\n📊 감정 분석 중...")
     # 트렌드 점수 0~1로 정규화
@@ -58,37 +48,24 @@ def build_coin_data_from_csv(coin_name: str, trend_score: float, holdings: dict)
     coin_key = coin_name.lower()    #보유중인지 
 
     # 데이터 로딩
-    tweet_df = pd.read_csv("tweets_data.csv")
-    reddit_df = pd.read_csv("reddit_data.csv")
-
-    # 텍스트 추출
-    all_texts = []
+    merged_df = pd.read_csv(f"{coin_name}_merged_data.csv")
 
     try:
-        tweet_rows = tweet_df[tweet_df["Coin"].str.lower() == coin_name.lower()]
-        tweet_texts = tweet_rows["Tweet"].dropna().tolist()
-        all_texts.extend(tweet_texts)
+        merged_df = pd.read_csv(f"{coin_name}_merged_data.csv")
+        texts = merged_df["Content"].dropna().tolist()
     except Exception as e:
-        print(f"트윗 파일 로딩 오류: {e}")
+        print(f"[오류] {coin_name}_merged_data.csv 로딩 실패: {e}")
+        return {}
 
-    # 레딧 데이터 읽기 + 필터 + 'Content' 컬럼 사용
-    try:
-        reddit_rows = reddit_df[reddit_df["Coin"].str.lower() == coin_name.lower()]
-        reddit_texts = reddit_rows["Content"].dropna().tolist()
-        all_texts.extend(reddit_texts)
-    except Exception as e:
-        print(f"레딧 파일 로딩 오류: {e}")
-
-    # 감정 분석
-    emotion_label, emotion_counts = analyze_sentiments(all_texts)
+    # 감정 분석 실행
+    emotion_label, emotion_counts = analyze_sentiments(texts)
 
     # coin_data 딕셔너리 반환
     return {
-        coin_name.lower(): {
+        coin_key: {
             "trend": trend_normalized,
             "emotion": emotion_label,
             "emotion_counts": emotion_counts,
             "holding": coin_key in holdings
         }
     }
-

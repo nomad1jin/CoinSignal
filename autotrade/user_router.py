@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from autotrade.models import UserSettings
 
+
 router = APIRouter()
 
 user_settings_store = {}
@@ -28,3 +29,6 @@ def get_user_info():
         "message": "사용자 설정 조회 성공",
         "data": user_settings_store["default"]
     }
+
+
+
