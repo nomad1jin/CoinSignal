@@ -2,20 +2,34 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Dashboard.css';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+
+const COLORS = ['#FF8042', '#0088FE', '#00C49F', '#FFBB28', '#FF6384'];
 
 function Dashboard() {
   const navigate = useNavigate();
   const [coinList, setCoinList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [allocation, setAllocation] = useState([]);
+  const [returnRate, setReturnRate] = useState(0);
+  const [returnKrw, setReturnKrw] = useState(0);
+  const [totalValue, setTotalValue] = useState(0);
 
   const goToSearch = () => {
-    navigate('/search');
+    navigate('/autotrade');
   };
 
   useEffect(() => {
     const fetchTrendingCoins = async () => {
       try {
-        const response = await fetch('http://localhost:8000/trending'); // API 주소에 맞게 수정
+        const response = await fetch('http://localhost:8000/trending');
         const result = await response.json();
 
         if (result.success) {
@@ -30,7 +44,37 @@ function Dashboard() {
       }
     };
 
+    const fetchAllocation = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/allocation');
+        const result = await response.json();
+
+        if (result.success) {
+          setAllocation(result.data.allocation);
+          setTotalValue(result.data.total_value);
+        }
+      } catch (err) {
+        console.error('할당 정보 에러:', err);
+      }
+    };
+
+    const fetchPerformance = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/performance');
+        const result = await response.json();
+
+        if (result.success) {
+          setReturnRate(result.data.return_rate);
+          setReturnKrw(result.data.return_krw);
+        }
+      } catch (err) {
+        console.error('수익률 정보 에러:', err);
+      }
+    };
+
     fetchTrendingCoins();
+    fetchAllocation();
+    fetchPerformance();
   }, []);
 
   return (
@@ -39,20 +83,48 @@ function Dashboard() {
 
       <div className="dashboard-layout">
         <div className="dashboard-left">
-          {/* 수익률 + 차트 */}
+          {/* 수익률 */}
           <section className="section">
             <h2 className="section-title">투자 현황</h2>
             <div className="profit-box">
               <p>기간 수익률</p>
               <p>최근 7일</p>
-              <p className="profit-rate">+ 10.02% (97,000원)</p>
+              <p className={returnRate >= 0 ? 'profit-rate plus' : 'profit-rate minus'}>
+                {returnRate >= 0 ? '+' : ''}{(returnRate * 100).toFixed(2)}% ({returnKrw.toLocaleString()}원)
+              </p>
             </div>
           </section>
 
+          {/* 도넛 차트 */}
           <section className="section">
             <h2 className="section-title">투자 비중</h2>
             <div className="donut-chart-box">
-              여기에 도넛 차트 들어갈 예정
+              {allocation.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={allocation}
+                        dataKey="percent"
+                        nameKey="coin"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label
+                      >
+                        {allocation.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <p className="total-value-text">총 투자금: {totalValue.toLocaleString()}원</p>
+                </>
+              ) : (
+                <p>도넛 차트 데이터를 불러오는 중...</p>
+              )}
             </div>
           </section>
         </div>
