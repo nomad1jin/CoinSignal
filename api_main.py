@@ -30,6 +30,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 허용할 origin 리스트
+origins = [
+    "http://localhost:3000",  # 프론트엔드 주소 (React dev server)
+    # 배포 시엔 실제 도메인도 추가
+]
+
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # or ["*"] to allow all
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # 라우터를 등록해줘야함
 app.include_router(dashboard_router)
 app.include_router(user_router)
